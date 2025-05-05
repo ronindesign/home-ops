@@ -85,8 +85,8 @@ spec:
     sources: ["crd", "ingress"]
     txtPrefix: k8s.
     txtOwnerId: default
-    # domainFilters: ["turner.haus"]
-    domainFilters: ["${SECRET_DOMAIN}"]
+    domainFilters: ["turner.haus"]
+    # domainFilters: ["${SECRET_DOMAIN}"]
     # domainFilters: [""]
     serviceMonitor:
       enabled: true
