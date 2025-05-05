@@ -86,6 +86,7 @@ spec:
     txtPrefix: k8s.
     txtOwnerId: default
     # domainFilters: ["turner.haus"]
+    # test
     domainFilters: ["${SECRET_DOMAIN}"]
     # domainFilters: [""]
     serviceMonitor:
