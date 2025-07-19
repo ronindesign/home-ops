@@ -1,0 +1,16 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: httpbin8
+  namespace: default
+spec:
+  chart:
+    spec:
+      chart: httpbin
+      reconcileStrategy: ChartVersion
+      sourceRef:
+        kind: HelmRepository
+        name: matheusfm
+  interval: 24h0m0s
+  releaseName: httpbin8
