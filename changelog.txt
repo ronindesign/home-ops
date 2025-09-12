@@ -1,0 +1,45 @@
+=== 2025-09-12 ===
+# Homepage Dashboard Deployment
+
+## Homepage Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/default/homepage/ks.yaml` - Flux Kustomization CRD
+- `kubernetes/apps/default/homepage/app/kustomization.yaml` - App-level Kustomize manifest  
+- `kubernetes/apps/default/homepage/app/helmrelease.yaml` - HelmRelease with homepage configuration
+- `kubernetes/apps/default/homepage/app/pvc.yaml` - PersistentVolumeClaim for config storage
+
+**Files Modified:**
+- `kubernetes/apps/default/kustomization.yaml` - Added homepage to resources list
+
+**Key Features:**
+- Uses GitOps patterns consistent with existing repository structure
+- Adapted TrueNAS values to app-template chart format
+- Kubernetes cluster mode enabled for service discovery
+- RBAC configured for namespace/pod/ingress access
+- Init container to set up default config files
+- Persistent storage for configuration
+- Internal ingress with external DNS annotation
+- Security context with non-root user (568:568)
+
+**Next Steps:**
+Once committed and pushed, Flux will:
+1. Reconcile the Kustomization and deploy homepage
+2. Create PVC with ceph-block storage
+3. Deploy homepage with default configuration
+4. Make it available at `https://homepage.${SECRET_DOMAIN}`
+
+**Suggested Commit Message:**
+```
+feat(homepage): Add homepage dashboard application
+
+- Deploy homepage v0.8.12 to default namespace
+- Configure Kubernetes cluster mode for service discovery  
+- Add RBAC for namespace, pod, and ingress access
+- Use persistent storage for configuration
+- Adapted from TrueNAS export values
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```

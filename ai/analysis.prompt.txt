@@ -1,0 +1,197 @@
+# GitOps Repository Analysis - home-ops
+
+## Repository Structure
+
+### Namespace Organization
+```
+kubernetes/apps/<namespace>/
+├── kustomization.yaml          # Namespace-level aggregator
+└── <app-name>/
+    ├── ks.yaml                 # Flux Kustomization CRD
+    └── app/
+        ├── kustomization.yaml  # App-level Kustomize manifest
+        ├── helmrelease.yaml    # Flux HelmRelease CRD  
+        ├── externalsecret.yaml # External secrets (optional)
+        ├── pvc.yaml           # PersistentVolumeClaim (optional)
+        └── [other manifests]   # ConfigMaps, NetworkPolicies, etc.
+```
+
+### Available Namespaces
+- `cert-manager` → cert-manager components
+- `database` → cloudnative-pg
+- `default` → echo, echo-internal, homebox, httpbin, httpbin2, mealie, podinfo
+- `external-secrets` → external-secrets components  
+- `flux-system` → flux components
+- `infra` → infrastructure apps
+- `kube-system` → system components
+- `media` → plex
+- `network` → networking apps
+- `rook-ceph` → storage components
+- `topolvm` → volume manager
+
+## Canonical Patterns
+
+### Namespace-level kustomization.yaml
+Located at: `kubernetes/apps/<namespace>/kustomization.yaml`
+
+Example structure:
+```yaml
+---
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: <namespace>
+components:
+  - ../../components/common
+  - ../../components/repos/app-template
+resources:
+  - ./app1/ks.yaml
+  - ./app2/ks.yaml
+  # - ./disabled-app/ks.yaml  # commented out apps
+```
+
+### Flux Kustomization (ks.yaml) Pattern
+Located at: `kubernetes/apps/<namespace>/<app>/ks.yaml`
+
+Standard template:
+```yaml
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/kustomize.toolkit.fluxcd.io/kustomization_v1.json
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: &app <app-name>
+  namespace: flux-system
+spec:
+  targetNamespace: <namespace>
+  commonMetadata:
+    labels:
+      app.kubernetes.io/name: *app
+  path: "./kubernetes/apps/<namespace>/<app>/app"
+  postBuild:
+    substituteFrom:
+      - name: cluster-secrets
+        kind: Secret
+    substitute:
+      APP: *app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  interval: 30m  # or 1h for some apps
+  timeout: 5m
+  # dependsOn:  # uncomment if dependencies exist
+  #   - name: rook-ceph-cluster
+  #     namespace: rook-ceph
+```
+
+### App-level kustomization.yaml
+Located at: `kubernetes/apps/<namespace>/<app>/app/kustomization.yaml`
+
+Standard template:
+```yaml
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./externalsecret.yaml  # if secrets needed
+  - ./helmrelease.yaml
+  - ./pvc.yaml            # if persistence needed
+```
+
+### HelmRelease Pattern
+Located at: `kubernetes/apps/<namespace>/<app>/app/helmrelease.yaml`
+
+Standard template:
+```yaml
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: <app-name>
+  namespace: <namespace>
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: app-template
+  maxHistory: 3
+  install:
+    createNamespace: true
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  uninstall:
+    keepHistory: false
+  values:
+    # App-specific values here
+```
+
+## Components System
+
+### Common Components
+- `../../components/common` - shared resources
+- `../../components/repos/app-template` - provides OCIRepository for bjw-s app-template
+
+### App-template Chart
+- Repository: `oci://ghcr.io/bjw-s/helm/app-template`
+- Version: `3.7.3` (as of analysis)
+- Used for most applications in the cluster
+
+## TrueNAS Exports Available
+
+Located at: `truenas-truecharts-app-export_2025-09-12/exports/`
+
+Available applications with existing configurations:
+- authentik, blocky, cert-manager, cloudnative-pg, clusterissuer
+- dontstarvetogether, duplicacy, external-homeassistant, external-service variants
+- grocy, homarr, homebox, homepage, lidarr, logseq, mealie, minio, n8n
+- netbootxyz, netdata, ntfy, organizr, overseerr, paperless-ngx, pgadmin
+- photoprism, plex, prometheus-operator, prowlarr, qbittorrent, radarr
+- rdesktop-ubuntu, readarr, recyclarr, rust-desk, sabnzbd, shlink
+- shlink-web-client, sonarr, tailscale, traefik, tubesync, wg-easy
+
+## Deployment Workflow
+
+When deploying new applications:
+
+1. **Create app directory**: `kubernetes/apps/<namespace>/<app>/`
+2. **Create ks.yaml**: Flux Kustomization pointing to `./app` subdirectory
+3. **Create app subdirectory**: `kubernetes/apps/<namespace>/<app>/app/`
+4. **Create app/kustomization.yaml**: List all resources
+5. **Create app/helmrelease.yaml**: Main application manifest
+6. **Create optional resources**:
+   - `externalsecret.yaml` for secrets
+   - `pvc.yaml` for persistence
+   - Additional manifests as needed
+7. **Update namespace kustomization.yaml**: Add new app to resources list
+
+## Validation Commands
+- `kubectl kustomize kubernetes/apps/<namespace>/<app>/app`
+- `flux check --pre` (without applying to cluster)
+
+## Naming Conventions
+- Directory names: lowercase, hyphenated
+- App names: consistent with directory names
+- Namespace targeting: explicit via `targetNamespace`
+- YAML anchors: `&app` for app name reuse
+
+## Secret Management
+- Uses External Secrets Operator
+- References `cluster-secrets` Secret in flux-system namespace
+- Substitution via `postBuild.substituteFrom`
+- Variables like `${SECRET_DOMAIN}` available in values
+
+## Dependencies
+- Common dependency: `rook-ceph-cluster` for storage
+- Some apps depend on `external-secrets`
+- Use `dependsOn` in Flux Kustomization spec when needed
+
+---
+Generated: 2025-09-12
+Last Updated: Analysis of existing repository structure and patterns
