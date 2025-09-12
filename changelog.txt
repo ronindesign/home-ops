@@ -1,11 +1,61 @@
 === 2025-09-12 ===
+# Homebox Asset Management Deployment
+
+## Homebox Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/default/homebox/ks.yaml` - Flux Kustomization CRD
+- `kubernetes/apps/default/homebox/app/kustomization.yaml` - App-level Kustomize manifest
+- `kubernetes/apps/default/homebox/app/helmrelease.yaml` - HelmRelease with Homebox configuration
+- `kubernetes/apps/default/homebox/app/pvc.yaml` - PersistentVolumeClaim for data storage
+
+**Files Modified:**
+- `kubernetes/apps/default/kustomization.yaml` - Added homebox to resources list (pending)
+
+**Key Features:**
+- Uses GitOps patterns consistent with existing repository structure
+- Adapted TrueNAS export values (v0.10.3) to app-template chart format
+- Configured Homebox environment variables for asset management
+- Auto-increment asset IDs enabled
+- Registration disabled for security
+- Max upload size set to 10MB
+- Persistent storage for data directory (/data)
+- EmptyDir volume for config directory
+- Internal ingress with external DNS annotation
+- Security context with non-root user (568:568)
+- Resource limits configured (500Mi memory limit)
+
+**Next Steps:**
+1. Update `kubernetes/apps/default/kustomization.yaml` to include homebox/ks.yaml
+2. Commit and push changes
+3. Flux will reconcile and deploy Homebox
+4. Application will be available at `https://box.${SECRET_DOMAIN}`
+
+**Validation Status:**
+- YAML syntax validation pending
+- Kubernetes manifest validation pending
+- Flux build test pending
+
+**Suggested Commit Message:**
+```
+feat(homebox): Add Homebox asset management application
+
+- Deploy Homebox v0.10.3 to default namespace
+- Configure persistent storage for asset data
+- Disable registration and enable auto-increment IDs
+- Use internal ingress with external DNS
+- Adapted from TrueNAS export values
+```
+
+---
+
 # Homepage Dashboard Deployment
 
 ## Homepage Deployment Complete
 
 **Files Created:**
 - `kubernetes/apps/default/homepage/ks.yaml` - Flux Kustomization CRD
-- `kubernetes/apps/default/homepage/app/kustomization.yaml` - App-level Kustomize manifest  
+- `kubernetes/apps/default/homepage/app/kustomization.yaml` - App-level Kustomize manifest
 - `kubernetes/apps/default/homepage/app/helmrelease.yaml` - HelmRelease with homepage configuration
 - `kubernetes/apps/default/homepage/app/pvc.yaml` - PersistentVolumeClaim for config storage
 
@@ -27,19 +77,15 @@ Once committed and pushed, Flux will:
 1. Reconcile the Kustomization and deploy homepage
 2. Create PVC with ceph-block storage
 3. Deploy homepage with default configuration
-4. Make it available at `https://homepage.${SECRET_DOMAIN}`
+4. Make it available at `https://home.${SECRET_DOMAIN}`
 
 **Suggested Commit Message:**
 ```
 feat(homepage): Add homepage dashboard application
 
 - Deploy homepage v0.8.12 to default namespace
-- Configure Kubernetes cluster mode for service discovery  
+- Configure Kubernetes cluster mode for service discovery
 - Add RBAC for namespace, pod, and ingress access
 - Use persistent storage for configuration
 - Adapted from TrueNAS export values
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
 ```
