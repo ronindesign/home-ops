@@ -1,5 +1,71 @@
 === 2025-09-12 ===
 
+# Dragonfly Database Deployment
+
+## Dragonfly Deployment Complete
+
+**Files Created:**
+- `kubernetes/components/repos/dragonfly/` - HelmRepository component for DragonflyDB operator
+- `kubernetes/apps/database/dragonfly/ks.yaml` - Dual Kustomization (operator + cluster)
+- `kubernetes/apps/database/dragonfly/operator/app/kustomization.yaml` - Operator app-level manifest
+- `kubernetes/apps/database/dragonfly/operator/app/helmrelease.yaml` - Operator HelmRelease configuration
+- `kubernetes/apps/database/dragonfly/cluster/app/kustomization.yaml` - Cluster app-level manifest
+- `kubernetes/apps/database/dragonfly/cluster/app/cluster.yaml` - Dragonfly custom resource
+
+**Files Modified:**
+- `kubernetes/apps/database/kustomization.yaml` - Added dragonfly HelmRepository component and enabled dragonfly deployment
+- `kubernetes/apps/default/paperless-ngx/app/externalsecret.yaml` - Updated Redis URL to use Dragonfly service
+
+**Key Components:**
+
+### Dragonfly Operator
+- **HelmRelease:** `dragonfly-operator` (v1.2.1)
+- **Chart:** `dragonfly-operator` from official DragonflyDB repository (`https://dragonflydb.github.io/dragonfly-operator`)
+- **Resources:** 100m CPU / 128Mi memory (requests), 500m CPU / 512Mi memory (limits)
+- **Deployment:** Single replica operator managing Dragonfly clusters
+
+### Dragonfly Cluster
+- **Custom Resource:** `Dragonfly` kind with name `dragonfly`
+- **Image:** `ghcr.io/dragonflydb/dragonfly:v1.23.1`
+- **Configuration:**
+  - 3 replicas for high availability
+  - 2Gi memory limit with 1000m CPU
+  - 2 proactor threads for performance
+  - Emulated cluster mode for Redis compatibility
+  - Default service on port 6379
+
+### Paperless-NGX Integration
+- **Redis URL:** `redis://dragonfly.database.svc.cluster.local:6379/0`
+- **Service Discovery:** Cross-namespace communication (default → database)
+- **Compatibility:** Full Redis protocol compatibility with DragonflyDB
+- **Performance:** High-performance alternative to Redis for background tasks and caching
+
+**Deployment Order:**
+1. **Dragonfly Operator** deploys first via HelmRelease
+2. **Dragonfly Cluster** waits for operator readiness with health checks
+3. **Paperless-NGX** connects to DragonflyDB service
+4. **Background tasks** and caching now functional with improved performance
+
+**Benefits:**
+- Redis-compatible high-performance in-memory database
+- Better memory efficiency than Redis
+- Simplified deployment via Kubernetes operator
+- Centralized caching service for multiple applications
+- Improved paperless-ngx performance for document processing
+
+**Suggested Commit Message:**
+```
+feat(dragonfly): Add DragonflyDB as Redis-compatible database service
+
+- Deploy DragonflyDB operator v1.2.1 to database namespace
+- Create 3-replica Dragonfly cluster with 2Gi memory allocation
+- Add HelmRepository component for DragonflyDB operator charts
+- Configure paperless-ngx to use Dragonfly instead of embedded Redis
+- Enable cross-namespace service discovery for database services
+```
+
+---
+
 # Paperless-NGX Document Management System Deployment
 
 ## Paperless-NGX Deployment Complete
