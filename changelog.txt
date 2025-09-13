@@ -1,4 +1,56 @@
 === 2025-09-12 ===
+
+# Paperless-NGX Document Management System Deployment
+
+## Paperless-NGX Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/default/paperless-ngx/ks.yaml` - Flux Kustomization CRD with rook-ceph dependency
+- `kubernetes/apps/default/paperless-ngx/app/kustomization.yaml` - App-level Kustomize manifest
+- `kubernetes/apps/default/paperless-ngx/app/helmrelease.yaml` - HelmRelease with paperless-ngx v2.8.6
+- `kubernetes/apps/default/paperless-ngx/app/pvc.yaml` - Three rook-ceph PVCs (data: 50Gi, media: 50Gi, consume: 10Gi)
+- `kubernetes/apps/default/paperless-ngx/app/externalsecret.yaml` - OnePassword integration for secrets
+
+**Files Modified:**
+- `kubernetes/apps/default/kustomization.yaml` - Added paperless-ngx to resources list
+
+**Key Features:**
+- Deployed paperless-ngx v2.8.6 for document management
+- Configured rook-ceph storage with total 110Gi capacity (data: 50Gi, media: 50Gi, consume: 10Gi)
+- PostgreSQL database integration via CloudNativePG
+- Redis support for background tasks and caching
+- OCR with English language support enabled
+- External secrets integration with OnePassword for secure credential management
+- Internal ingress configured at `docs.${SECRET_DOMAIN}`
+- Resource allocation: 1000m CPU request, 256Mi-2Gi memory
+- Security context optimized for document processing
+- Auto-initialization of PostgreSQL database and user
+
+**Configuration Details:**
+- Admin user: `admin` with password from OnePassword
+- Database: `paperless-ngx` on shared PostgreSQL cluster
+- Redis connection for background task processing
+- OCR languages configured for English documents
+- Document consumption directory monitoring enabled
+- Media and data directories with persistent storage
+
+**OnePassword Requirements:**
+- `paperless-ngx` vault: `PAPERLESS_SECRET_KEY`, `PAPERLESS_ADMIN_PASSWORD`, `PAPERLESS_POSTGRES_USER`, `PAPERLESS_POSTGRES_PASS`
+- `cloudnative-pg` vault: Database initialization credentials
+
+**Suggested Commit Message:**
+```
+feat(paperless-ngx): Add document management system
+
+- Deploy paperless-ngx v2.8.6 to default namespace
+- Configure rook-ceph storage with 110Gi total capacity
+- Integrate with PostgreSQL and Redis via external secrets
+- Enable internal ingress with SECRET_DOMAIN variable
+- Add dependency on rook-ceph-cluster for storage
+```
+
+---
+
 # Homebox Asset Management Deployment
 
 ## Homebox Deployment Complete
