@@ -1,3 +1,284 @@
+=== 2025-09-14 ===
+
+# Media Management Stack Deployment
+
+## Media Applications Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/media/overseerr/` - Complete Overseerr deployment (ks.yaml, app/*)
+- `kubernetes/apps/media/radarr/` - Complete Radarr deployment with PostgreSQL
+- `kubernetes/apps/media/sonarr/` - Complete Sonarr deployment with PostgreSQL
+- `kubernetes/apps/media/prowlarr/` - Complete Prowlarr indexer management
+- `kubernetes/apps/media/readarr/` - Complete Readarr deployment with PostgreSQL
+- `kubernetes/apps/media/sabnzbd/` - Complete SABnzbd Usenet downloader
+
+**Files Modified:**
+- `kubernetes/apps/media/kustomization.yaml` - Added all six media apps to resources
+
+**Key Components:**
+
+### Overseerr Request Management
+- **HelmRelease:** `overseerr` using bjw-s app-template
+- **Image:** `ghcr.io/sct/overseerr:1.33.2`
+- **URL:** `https://requests.${SECRET_DOMAIN}`
+- **Storage:** 1Gi config PVC on ceph-block
+- **Resources:** 10m CPU / 250Mi memory (requests), 1Gi memory (limits)
+
+### Radarr Movie Automation
+- **HelmRelease:** `radarr` with PostgreSQL integration
+- **Image:** `ghcr.io/onedr0p/radarr:5.4.6.8723`
+- **URL:** `https://movies.${SECRET_DOMAIN}`
+- **Storage:** 10Gi config PVC + NFS media mount
+- **Database:** PostgreSQL with postgres-init container
+- **Dependencies:** Prowlarr for indexer management
+
+### Sonarr TV Automation
+- **HelmRelease:** `sonarr` with PostgreSQL integration
+- **Image:** `ghcr.io/onedr0p/sonarr:4.0.4.1491`
+- **URL:** `https://tv.${SECRET_DOMAIN}`
+- **Storage:** 10Gi config PVC + NFS media mount
+- **Database:** PostgreSQL with postgres-init container
+- **Dependencies:** Prowlarr for indexer management
+
+### Prowlarr Indexer Management
+- **HelmRelease:** `prowlarr` centralized indexer hub
+- **Image:** `ghcr.io/onedr0p/prowlarr-develop:1.16.2.4435`
+- **URL:** `https://indexers.${SECRET_DOMAIN}`
+- **Storage:** 1Gi config PVC on ceph-block
+- **Database:** PostgreSQL with postgres-init container
+
+### Readarr Book Automation
+- **HelmRelease:** `readarr` with PostgreSQL integration
+- **Image:** `ghcr.io/onedr0p/readarr-develop:0.3.23.2506`
+- **URL:** `https://books.${SECRET_DOMAIN}`
+- **Storage:** 10Gi config PVC + NFS media mount
+- **Database:** PostgreSQL with postgres-init container
+- **Dependencies:** Prowlarr for indexer management
+
+### SABnzbd Usenet Downloader
+- **HelmRelease:** `sabnzbd` download client
+- **Image:** `ghcr.io/onedr0p/sabnzbd:4.2.3`
+- **URL:** `https://downloads.${SECRET_DOMAIN}`
+- **Storage:** 1Gi config PVC + NFS media mount
+- **Resources:** 10m CPU / 250Mi memory (requests), 8Gi memory (limits)
+
+### Shared Configuration
+- **NFS Media Storage:** Shared mount at `/media` from `${NAS_IP}:/mnt/storage/media`
+- **External Secrets:** OnePassword integration for API keys and credentials
+- **Database:** All *arr apps use PostgreSQL via CloudNativePG
+- **Ingress:** Internal class with external-dns annotations
+- **Dependencies:** Rook-Ceph for storage, Prowlarr for indexers
+
+**External Secrets Required (OnePassword):**
+- `media` vault: Shared media credentials
+- `radarr` vault: `RADARR_API_KEY`, database credentials
+- `sonarr` vault: `SONARR_API_KEY`, database credentials
+- `prowlarr` vault: `PROWLARR_API_KEY`, database credentials
+- `readarr` vault: `READARR_API_KEY`, database credentials
+- `sabnzbd` vault: API key and server credentials
+
+**Suggested Commit Message:**
+```
+feat(media): Deploy complete media management stack
+
+- Add Overseerr for content request management
+- Add Radarr for automated movie downloads
+- Add Sonarr for automated TV show downloads
+- Add Prowlarr for centralized indexer management
+- Add Readarr for automated book/audiobook downloads
+- Add SABnzbd for Usenet download handling
+- Configure shared NFS media storage across all apps
+- Integrate with PostgreSQL and OnePassword secrets
+```
+
+---
+
+# Default Namespace Applications Deployment
+
+## Homarr, n8n, and PhotoPrism Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/default/homarr/` - Complete Homarr dashboard deployment
+- `kubernetes/apps/default/n8n/` - Complete n8n workflow automation
+- `kubernetes/apps/default/photoprism/` - Complete PhotoPrism photo management
+
+**Files Modified:**
+- `kubernetes/apps/default/kustomization.yaml` - Added all three apps to resources
+
+**Key Components:**
+
+### Homarr Dashboard
+- **HelmRelease:** `homarr` using bjw-s app-template
+- **Image:** `ghcr.io/homarr-labs/homarr:v1.0.0`
+- **URL:** `https://dash.${SECRET_DOMAIN}`
+- **Database:** PostgreSQL with postgres-init container
+- **Storage:** Dual PVCs for config (1Gi) and data (1Gi)
+- **Resources:** 10m CPU / 100Mi memory (requests), 500Mi memory (limits)
+
+### n8n Workflow Automation
+- **HelmRelease:** `n8n` with comprehensive environment configuration
+- **Image:** `n8nio/n8n:1.73.1`
+- **URL:** `https://auto.${SECRET_DOMAIN}`
+- **Database:** PostgreSQL for workflows and credentials
+- **Queue:** Dragonfly Redis for background tasks
+- **Storage:** 10Gi data PVC + EmptyDir for logs
+- **SMTP:** Full email integration for notifications
+- **Resources:** 100m CPU / 256Mi memory (requests), 2Gi memory (limits)
+
+### PhotoPrism Photo Management
+- **HelmRelease:** `photoprism` with multi-volume configuration
+- **Image:** `photoprism/photoprism:241128`
+- **URL:** `https://photos.${SECRET_DOMAIN}`
+- **Database:** PostgreSQL for metadata and search
+- **Storage:**
+  - Assets: 50Gi for app data/cache
+  - Originals: 500Gi for photo storage
+  - Import: 100Gi for staging
+  - Temp: EmptyDir for processing
+- **Resources:** 100m CPU / 512Mi memory (requests), 4Gi memory (limits)
+- **Security:** Non-root user (568:568) with proper permissions
+
+**Dependencies:**
+- All apps require `rook-ceph-cluster` for storage
+- Database apps require `cloudnative-pg-cluster`
+- n8n uses Dragonfly for Redis functionality
+
+**Suggested Commit Message:**
+```
+feat(apps): Deploy Homarr, n8n, and PhotoPrism applications
+
+- Add Homarr dashboard with PostgreSQL backend
+- Add n8n workflow automation with Redis queue support
+- Add PhotoPrism photo management with 650Gi storage
+- Configure external secrets and persistent volumes
+- Set up ingress rules for all three applications
+```
+
+---
+
+=== 2025-09-14 ===
+
+# PhotoPrism Photo Management Deployment
+
+## PhotoPrism Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/default/photoprism/ks.yaml` - Flux Kustomization for PhotoPrism
+- `kubernetes/apps/default/photoprism/app/kustomization.yaml` - App-level resource aggregator
+- `kubernetes/apps/default/photoprism/app/helmrelease.yaml` - PhotoPrism HelmRelease configuration
+- `kubernetes/apps/default/photoprism/app/externalsecret.yaml` - External secrets configuration
+- `kubernetes/apps/default/photoprism/app/pvc.yaml` - Persistent volume claims for storage
+
+**Files Modified:**
+- `kubernetes/apps/default/kustomization.yaml` - Added photoprism to namespace resources
+
+**Key Components:**
+
+### PhotoPrism Application
+- **HelmRelease:** `photoprism` using bjw-s app-template
+- **Image:** `photoprism/photoprism:241128@sha256:20e8b8f28c8d1a6a7d982d8b15fa9b325b5529ddce1e5ac3c1cfa7c7b9e3a7b7`
+- **URL:** `https://photos.${SECRET_DOMAIN}`
+- **Resources:** 100m CPU / 512Mi memory (requests), 4Gi memory (limits)
+
+### Database Configuration
+- **PostgreSQL:** Connected to `postgres-rw.database.svc.cluster.local:5432`
+- **Database:** `photoprism` database with dedicated user credentials
+- **Init Container:** postgres-init for automatic database creation
+
+### Storage & Persistence
+- **Assets Volume:** 50Gi PVC on ceph-block storage class for app data/cache
+- **Originals Volume:** 500Gi PVC on ceph-block for photo storage
+- **Import Volume:** 100Gi PVC on ceph-block for import staging
+- **Temp Directory:** EmptyDir volume for temporary processing
+- **Total Storage:** 650Gi persistent + temp space
+
+### External Secrets Required (OnePassword)
+- `photoprism_postgres_user` - Database username
+- `photoprism_postgres_password` - Database password
+- `photoprism_admin_password` - Admin user password
+- `cloudnative_pg_password` - Database superuser password
+
+### Features Configuration
+- **Admin User:** `admin` with secure password from secrets
+- **Photo Management:** Originals, import, and processing paths configured
+- **Database Integration:** PostgreSQL for metadata and search indexing
+- **Security Context:** Non-root user (568:568) with proper permissions
+- **Path Configuration:** Dedicated paths for storage, cache, config, and backup
+
+**Dependencies:**
+- Requires `rook-ceph-cluster` for persistent storage
+- Requires `cloudnative-pg-cluster` for PostgreSQL database
+- Uses OnePassword Connect for secure credential management
+
+**Suggested Commit Message:**
+```
+feat(photoprism): Add PhotoPrism photo management system
+
+- Deploy PhotoPrism latest (241128) to default namespace
+- Configure 650Gi total storage across three PVCs
+- Integrate with PostgreSQL database and OnePassword secrets
+- Enable photo management with import/originals/processing workflows
+- Add dependency on rook-ceph-cluster for storage
+```
+
+---
+
+# n8n Workflow Automation Deployment
+
+## n8n Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/default/n8n/ks.yaml` - Flux Kustomization for n8n
+- `kubernetes/apps/default/n8n/app/kustomization.yaml` - App-level resource aggregator
+- `kubernetes/apps/default/n8n/app/helmrelease.yaml` - n8n HelmRelease configuration
+- `kubernetes/apps/default/n8n/app/externalsecret.yaml` - External secrets configuration
+- `kubernetes/apps/default/n8n/app/pvc.yaml` - Persistent volume claim for data
+
+**Files Modified:**
+- `kubernetes/apps/default/kustomization.yaml` - Added n8n to namespace resources
+
+**Key Components:**
+
+### n8n Application
+- **HelmRelease:** `n8n` using bjw-s app-template (v3.7.3)
+- **Image:** `n8nio/n8n:1.73.1`
+- **URL:** `https://auto.${SECRET_DOMAIN}`
+- **Resources:** 100m CPU / 256Mi memory (requests), 2Gi memory (limits)
+
+### Database & Queue Configuration
+- **PostgreSQL:** Connected to `postgres-rw.database.svc.cluster.local:5432`
+- **Database:** `n8n` database with dedicated user credentials
+- **Redis Queue:** Using Dragonfly at `dragonfly.database.svc.cluster.local:6379`
+- **Init Container:** postgres-init for automatic database creation
+
+### Storage & Persistence
+- **Data Volume:** 10Gi PVC on ceph-block storage class
+- **Mount Path:** `/data` for workflows, credentials, and configurations
+- **Logs:** EmptyDir volume at `/data/logs` for application logs
+
+### External Secrets Required (1Password)
+- `n8n_postgres_user` - Database username
+- `n8n_postgres_password` - Database password
+- `n8n_encryption_key` - 32-character encryption key (CRITICAL - never change after setup)
+- `n8n_smtp_host` - SMTP server hostname
+- `n8n_smtp_port` - SMTP port (465 for SSL, 587 for TLS)
+- `n8n_smtp_user` - SMTP username
+- `n8n_smtp_pass` - SMTP password
+- `n8n_smtp_sender` - Sender email/name
+
+### Features Configuration
+- **Workflow automation** with webhook support
+- **SMTP email** integration for notifications
+- **User management** enabled with email templates
+- **Templates library** enabled for quick workflow creation
+- **Diagnostics** and version notifications disabled
+- **Onboarding flow** disabled for experienced users
+
+**Dependencies:**
+- Requires `rook-ceph-cluster` for storage
+- Requires `cloudnative-pg-cluster` for database
+- Uses Dragonfly for Redis queue functionality
+
 === 2025-09-12 ===
 
 # Dragonfly Database Deployment

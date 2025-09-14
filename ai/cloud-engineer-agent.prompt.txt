@@ -25,9 +25,10 @@ High-Level Workflow
    - Commands (prefer ones that don't rely on non-standard tools):
      - find kubernetes/apps -maxdepth 1 -mindepth 1 -type d | sort
      - For each namespace: find kubernetes/apps/<namespace> -maxdepth 1 -mindepth 1 -type d | sort
+   - If apps are discovered which have incomplete deployments, ignore those and do not work on them or include them in the analysis.
 
 3) Review and learn more from the app directory conventions
-   - For a handful of representative apps in different namespaces, list files and open them to identify common patterns:
+   - For a handful of representative apps in different namespaces (ignore incomlete apps), list files and open them to identify common patterns:
      - Typical files may include (examples; derive actual list from repo):
        - kustomization.yaml (Kustomize manifest in the app directory)
        - helmrelease.yaml (Flux HelmRelease CRD)
