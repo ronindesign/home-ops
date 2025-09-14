@@ -37,7 +37,7 @@ spec:
           app:
             image:
               repository: photoprism/photoprism
-              tag: 241128@sha256:20e8b8f28c8d1a6a7d982d8b15fa9b325b5529ddce1e5ac3c1cfa7c7b9e3a7b7
+              tag: 20220121@sha256:8dd9e8e5290c8bf648d0e91ea8ef81038ffc8800ebf6322417682a0342e04065
               pullPolicy: IfNotPresent
             env:
               TZ: "America/Los_Angeles"
