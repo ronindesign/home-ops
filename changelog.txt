@@ -1,3 +1,73 @@
+=== 2025-09-17 ===
+
+# Shlink URL Shortener and Web Client Deployment
+
+## Shlink and Shlink-Web-Client Deployment Complete
+
+**Files Created:**
+- `kubernetes/apps/default/shlink/ks.yaml` - Flux Kustomization for shlink
+- `kubernetes/apps/default/shlink/app/kustomization.yaml` - App-level resource aggregator
+- `kubernetes/apps/default/shlink/app/helmrelease.yaml` - Shlink HelmRelease configuration
+- `kubernetes/apps/default/shlink/app/externalsecret.yaml` - External secrets configuration
+- `kubernetes/apps/default/shlink/app/pvc.yaml` - Persistent volume claim for data
+- `kubernetes/apps/default/shlink-web-client/ks.yaml` - Flux Kustomization for web client
+- `kubernetes/apps/default/shlink-web-client/app/kustomization.yaml` - App-level resource aggregator
+- `kubernetes/apps/default/shlink-web-client/app/helmrelease.yaml` - Web client HelmRelease
+
+**Files Modified:**
+- `kubernetes/apps/default/kustomization.yaml` - Added shlink and shlink-web-client to resources
+
+**Key Components:**
+
+### Shlink URL Shortener
+- **HelmRelease:** `shlink` using bjw-s app-template
+- **Image:** `shlinkio/shlink:4.2.2`
+- **URLs:** `https://s.${SECRET_DOMAIN}` and `https://shlink.${SECRET_DOMAIN}`
+- **Database:** PostgreSQL at `postgres-rw.database.svc.cluster.local`
+- **Cache:** Redis at `redis.database.svc.cluster.local`
+- **Storage:** 1Gi PVC on ceph-block for data
+- **Resources:** 100m CPU / 256Mi memory (requests), 512Mi memory (limits)
+
+### Shlink Web Client (Admin UI)
+- **HelmRelease:** `shlink-web-client` using bjw-s app-template
+- **Image:** `shlinkio/shlink-web-client:4.2.1`
+- **URL:** `https://shlink-admin.${SECRET_DOMAIN}`
+- **Resources:** 10m CPU / 50Mi memory (requests), 256Mi memory (limits)
+- **Connection:** Points to main shlink instance
+
+### Configuration Details
+- **Short URL Configuration:**
+  - Default domain: `s.${SECRET_DOMAIN}`
+  - Short code length: 5 characters
+  - HTTPS enabled with schema enforcement
+  - Auto-resolve titles enabled
+  - Periodic visit location tracking enabled
+- **Init Container:** PostgreSQL readiness check before startup
+- **Health Checks:** REST API health endpoint monitoring
+
+**External Secrets Required (OnePassword):**
+- `shlink` vault:
+  - `shlink_geolite_license_key` - GeoLite2 license for location data
+  - `shlink_db_password` - Database password
+  - `shlink_api_key` - API key for REST access
+
+**Dependencies:**
+- Shlink depends on: `external-secrets`, `rook-ceph-cluster`
+- Shlink-web-client depends on: `shlink`
+
+**Suggested Commit Message:**
+```
+feat(default): Add shlink URL shortener and web client
+
+- Deploy shlink v4.2.2 with PostgreSQL and Redis integration
+- Deploy shlink-web-client v4.2.1 admin interface
+- Configure ingress for s.domain, shlink.domain, and shlink-admin.domain
+- Add external secrets for API keys and database credentials
+- Configure 1Gi persistent storage for shlink data
+```
+
+---
+
 === 2025-09-14 ===
 
 # Media Management Stack Deployment
