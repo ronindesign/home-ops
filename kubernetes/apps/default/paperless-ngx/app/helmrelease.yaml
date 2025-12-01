@@ -37,7 +37,7 @@ spec:
           app:
             image:
               repository: ghcr.io/paperless-ngx/paperless-ngx
-              tag: 2.8.6@sha256:2744572313cf3026520243f00e064d8fa82d838173a160d63b7e481575a86fdc
+              tag: 2.20.1@sha256:98528e58787e48c73748608e8d4c03b1692c185e69fc237c00c44d3b4f68b335
               pullPolicy: IfNotPresent
             env:
               TZ: "America/Los_Angeles"
