@@ -3,7 +3,7 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: echo-internal
+  name: echo-envoy
 spec:
   suspend: false # *** SUSPEND / DISABLE APP ***
   interval: 168h
@@ -18,7 +18,7 @@ spec:
     remediation:
       retries: 3
   dependsOn:
-    - name: internal-ingress-nginx
+    - name: envoy-gateway
       namespace: network
   values:
     enabled: true
@@ -78,18 +78,6 @@ spec:
             path: /metrics
             interval: 5m
             scrapeTimeout: 10s
-    ingress:
-      app:
-        className: internal
-        annotations:
-          external-dns.alpha.kubernetes.io/target: "external.${SECRET_DOMAIN}"
-        hosts:
-          - host: "{{ .Release.Name }}.${SECRET_DOMAIN}"
-            paths:
-              - path: /
-                service:
-                  identifier: app
-                  port: http
     route:
       app:
         # annotations:
