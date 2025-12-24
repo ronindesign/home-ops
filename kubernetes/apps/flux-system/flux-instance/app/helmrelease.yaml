@@ -25,10 +25,9 @@ spec:
         kind: GitRepository
         url: https://github.com/ronindesign/home-ops
         ref: refs/heads/main
-        #path: kubernetes/flux/cluster
+        path: kubernetes/flux/cluster
         interval: 1h
       kustomize:
-        path: ./kubernetes/flux/cluster
         patches:
           - # Increase the number of workers
             patch: |-
@@ -59,20 +58,19 @@ spec:
               kind: Deployment
               name: (kustomize-controller|helm-controller|source-controller)
           - # Enable in-memory kustomize builds
-            # DISABLED: Temporarily disabled due to path resolution issues after FluxCD upgrade
-            # patch: |-
-            #   - op: add
-            #     path: /spec/template/spec/containers/0/args/-
-            #     value: --concurrent=20
-            #   - op: replace
-            #     path: /spec/template/spec/volumes/0
-            #     value:
-            #       name: temp
-            #       emptyDir:
-            #         medium: Memory
-            # target:
-            #   kind: Deployment
-            #   name: kustomize-controller
+            patch: |-
+              - op: add
+                path: /spec/template/spec/containers/0/args/-
+                value: --concurrent=20
+              - op: replace
+                path: /spec/template/spec/volumes/0
+                value:
+                  name: temp
+                  emptyDir:
+                    medium: Memory
+            target:
+              kind: Deployment
+              name: kustomize-controller
           - # Enable Helm repositories caching
             patch: |-
               - op: add
