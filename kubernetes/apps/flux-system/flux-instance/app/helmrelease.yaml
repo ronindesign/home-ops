@@ -59,19 +59,20 @@ spec:
               kind: Deployment
               name: (kustomize-controller|helm-controller|source-controller)
           - # Enable in-memory kustomize builds
-            patch: |-
-              - op: add
-                path: /spec/template/spec/containers/0/args/-
-                value: --concurrent=20
-              - op: replace
-                path: /spec/template/spec/volumes/0
-                value:
-                  name: temp
-                  emptyDir:
-                    medium: Memory
-            target:
-              kind: Deployment
-              name: kustomize-controller
+            # DISABLED: Temporarily disabled due to path resolution issues after FluxCD upgrade
+            # patch: |-
+            #   - op: add
+            #     path: /spec/template/spec/containers/0/args/-
+            #     value: --concurrent=20
+            #   - op: replace
+            #     path: /spec/template/spec/volumes/0
+            #     value:
+            #       name: temp
+            #       emptyDir:
+            #         medium: Memory
+            # target:
+            #   kind: Deployment
+            #   name: kustomize-controller
           - # Enable Helm repositories caching
             patch: |-
               - op: add
